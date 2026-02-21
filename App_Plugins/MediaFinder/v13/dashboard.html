@@ -35,7 +35,10 @@
         </uui-box>
 
         <div id="resultsSection" class="results-section" style="display:none;">
-            <h3>Results <span id="resultCount" class="result-count"></span></h3>
+            <div class="results-header">
+                <h3>Results <span id="resultCount" class="result-count"></span></h3>
+                <uui-button label="Export CSV" id="exportCsv" look="outline"></uui-button>
+            </div>
             <div class="table-wrapper">
                 <table class="results-table">
                     <thead>
@@ -43,7 +46,11 @@
                             <th class="sortable" data-sort="name">File Name <span class="sort-arrow"></span></th>
                             <th class="sortable" data-sort="type">Type <span class="sort-arrow"></span></th>
                             <th class="sortable" data-sort="size">Size <span class="sort-arrow"></span></th>
-                            <th>Link</th>
+                            <th>Dimensions</th>
+                            <th>Created</th>
+                            <th>Path</th>
+                            <th>Media Link</th>
+                            <th>Server Link</th>
                         </tr>
                     </thead>
                     <tbody id="resultsBody">

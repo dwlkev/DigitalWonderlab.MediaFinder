@@ -9,6 +9,7 @@ export default class MediaFinderDashboard extends UmbElementMixin(HTMLElement) {
     #sortBy = "name";
     #sortDir = "asc";
     #totalCount = 0;
+    #lastSearchResults = [];
 
     constructor() {
         super();
@@ -82,6 +83,9 @@ export default class MediaFinderDashboard extends UmbElementMixin(HTMLElement) {
             }
         });
 
+        // CSV Export button
+        this.shadowRoot.getElementById("exportCsv").addEventListener("click", () => this.exportCsv());
+
         this.consumeContext(UMB_NOTIFICATION_CONTEXT, (instance) => {
             this.#notificationContext = instance;
         });
@@ -103,6 +107,27 @@ export default class MediaFinderDashboard extends UmbElementMixin(HTMLElement) {
         const i = Math.floor(Math.log(bytes) / Math.log(1024));
         const value = bytes / Math.pow(1024, i);
         return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+    }
+
+    formatDate(dateStr) {
+        const d = new Date(dateStr);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    formatDimensions(width, height) {
+        if (width && height) return `${width}×${height}`;
+        if (width) return `${width}w`;
+        if (height) return `${height}h`;
+        return "—";
+    }
+
+    formatPath(pathStr) {
+        if (!pathStr) return "—";
+        const parts = pathStr.split(",").filter((p) => p !== "-1");
+        return parts.join(" › ");
     }
 
     updateSortIndicators() {
@@ -202,18 +227,25 @@ export default class MediaFinderDashboard extends UmbElementMixin(HTMLElement) {
                 return;
             }
 
+            this.#lastSearchResults = data.results;
+
             const tbody = this.shadowRoot.getElementById("resultsBody");
             tbody.innerHTML = "";
 
             data.results.forEach((item) => {
                 const tr = document.createElement("tr");
                 const mediaLink = `/umbraco/section/media/workspace/media/edit/${item.uniqueId}`;
+                const serverLink = item.filePath ? item.filePath : "";
 
                 tr.innerHTML = `
                     <td>${this.escapeHtml(item.name)}</td>
                     <td>${this.escapeHtml(item.extension || item.mediaType)}</td>
                     <td>${this.formatBytes(item.sizeBytes)}</td>
-                    <td><a href="${mediaLink}">Open</a></td>
+                    <td>${this.formatDimensions(item.width, item.height)}</td>
+                    <td>${this.formatDate(item.createDate)}</td>
+                    <td title="${this.escapeHtml(item.filePath)}">${this.formatPath(item.path)}</td>
+                    <td><a href="${mediaLink}" target="_blank">Open</a></td>
+                    <td>${serverLink ? `<a href="${this.escapeHtml(serverLink)}" target="_blank">View</a>` : "—"}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -236,6 +268,66 @@ export default class MediaFinderDashboard extends UmbElementMixin(HTMLElement) {
         const div = document.createElement("div");
         div.textContent = str;
         return div.innerHTML;
+    }
+
+    escapeCsv(value) {
+        if (value == null) return "";
+        const str = String(value);
+        if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+            return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+    }
+
+    #getExportFilename() {
+        const d = new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `media-finder-export-${yyyy}-${mm}-${dd}.csv`;
+    }
+
+    exportCsv() {
+        if (!this.#lastSearchResults || this.#lastSearchResults.length === 0) {
+            this.#notificationContext?.peek("warning", {
+                data: { headline: "Nothing to export", message: "Run a search first before exporting." },
+            });
+            return;
+        }
+
+        const rows = [["File Name", "Type", "Size (bytes)", "Width", "Height", "Created Date", "Node Path", "Server URL"]];
+
+        this.#lastSearchResults.forEach((item) => {
+            rows.push([
+                this.escapeCsv(item.name),
+                this.escapeCsv(item.extension || item.mediaType),
+                this.escapeCsv(item.sizeBytes || 0),
+                this.escapeCsv(item.width || ""),
+                this.escapeCsv(item.height || ""),
+                this.escapeCsv(this.formatDate(item.createDate)),
+                this.escapeCsv(this.formatPath(item.path)),
+                this.escapeCsv(item.filePath || "")
+            ]);
+        });
+
+        const csv = rows.map((r) => r.join(",")).join("\r\n") + "\r\n";
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = this.#getExportFilename();
+        a.style.display = "none";
+        a.addEventListener("click", (e) => e.stopPropagation());
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 150);
+
+        this.#notificationContext?.peek("positive", {
+            data: { headline: "CSV exported!", message: "Your search results have been downloaded." },
+        });
     }
 }
 

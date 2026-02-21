@@ -9,6 +9,7 @@
         var sortBy = "name";
         var sortDir = "asc";
         var totalCount = 0;
+        var lastSearchResults = [];
 
         function formatBytes(bytes) {
             if (!bytes || bytes === 0) return "0 B";
@@ -22,6 +23,80 @@
             var div = document.createElement("div");
             div.textContent = str;
             return div.innerHTML;
+        }
+
+        function formatDate(dateStr) {
+            var d = new Date(dateStr);
+            var yyyy = d.getFullYear();
+            var mm = String(d.getMonth() + 1).padStart(2, "0");
+            var dd = String(d.getDate()).padStart(2, "0");
+            return yyyy + "-" + mm + "-" + dd;
+        }
+
+        function formatDimensions(width, height) {
+            if (width && height) return width + "×" + height;
+            if (width) return width + "w";
+            if (height) return height + "h";
+            return "—";
+        }
+
+        function formatPath(pathStr) {
+            if (!pathStr) return "—";
+            var parts = pathStr.split(",").filter(function (p) { return p !== "-1"; });
+            return parts.join(" › ");
+        }
+
+        function escapeCsv(value) {
+            if (value == null) return "";
+            var str = String(value);
+            if (str.indexOf(",") >= 0 || str.indexOf('"') >= 0 || str.indexOf("\n") >= 0) {
+                return '"' + str.replace(/"/g, '""') + '"';
+            }
+            return str;
+        }
+
+        function getExportFilename() {
+            var d = new Date();
+            var yyyy = d.getFullYear();
+            var mm = String(d.getMonth() + 1).padStart(2, "0");
+            var dd = String(d.getDate()).padStart(2, "0");
+            return "media-finder-export-" + yyyy + "-" + mm + "-" + dd + ".csv";
+        }
+
+        function exportCsv() {
+            if (!lastSearchResults || lastSearchResults.length === 0) {
+                return;
+            }
+
+            var rows = [["File Name", "Type", "Size (bytes)", "Width", "Height", "Created Date", "Node Path", "Server URL"]];
+
+            lastSearchResults.forEach(function (item) {
+                rows.push([
+                    escapeCsv(item.name),
+                    escapeCsv(item.extension || item.mediaType),
+                    escapeCsv(item.sizeBytes || 0),
+                    escapeCsv(item.width || ""),
+                    escapeCsv(item.height || ""),
+                    escapeCsv(formatDate(item.createDate)),
+                    escapeCsv(formatPath(item.path)),
+                    escapeCsv(item.filePath || "")
+                ]);
+            });
+
+            var csv = rows.map(function (r) { return r.join(","); }).join("\r\n") + "\r\n";
+            var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = getExportFilename();
+            a.style.display = "none";
+            a.addEventListener("click", function (e) { e.stopPropagation(); });
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function () {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 150);
         }
 
         function onSearchTypeChange(type) {
@@ -115,18 +190,25 @@
                     return;
                 }
 
+                lastSearchResults = data.results;
+
                 var tbody = byId("resultsBody");
                 tbody.innerHTML = "";
 
                 data.results.forEach(function (item) {
                     var tr = document.createElement("tr");
                     var mediaLink = "/umbraco/#/media/media/edit/" + item.id;
+                    var serverLink = item.filePath ? item.filePath : "";
 
                     tr.innerHTML =
                         "<td>" + escapeHtml(item.name) + "</td>" +
                         "<td>" + escapeHtml(item.extension || item.mediaType) + "</td>" +
                         "<td>" + formatBytes(item.sizeBytes) + "</td>" +
-                        '<td><a href="' + mediaLink + '">Open</a></td>';
+                        "<td>" + formatDimensions(item.width, item.height) + "</td>" +
+                        "<td>" + formatDate(item.createDate) + "</td>" +
+                        '<td title="' + escapeHtml(item.filePath) + '">' + formatPath(item.path) + "</td>" +
+                        '<td><a href="' + mediaLink + '" target="_blank">Open</a></td>' +
+                        "<td>" + (serverLink ? '<a href="' + escapeHtml(serverLink) + '" target="_blank">View</a>' : "—") + "</td>";
                     tbody.appendChild(tr);
                 });
 
@@ -183,6 +265,9 @@
             var totalPages = Math.ceil(totalCount / pageSize);
             if (currentPage < totalPages) { currentPage++; performSearch(); }
         });
+
+        // Bind CSV export button
+        byId("exportCsv")?.addEventListener("click", function () { exportCsv(); });
     }
 
     w.MediaFinderV13 = { init: init };
