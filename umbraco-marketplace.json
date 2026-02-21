@@ -17,6 +17,11 @@
   "Description": "An Umbraco backoffice dashboard that lets you search for media items by name, size, or type.",
   "LicenseTypes": [ "Free" ],
   "PackageType": "Package",
+  "Screenshots": [
+    {
+      "ImageUrl": "https://i.postimg.cc/W3PYjn83/medafinder.png"
+    }
+  ],
   "Tags": [ "Developer Tools", "Editor Tools", "Media" ],
   "Title": "Media Finder",
   "VersionDependencyMode": "SemVer"

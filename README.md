@@ -20,3 +20,6 @@ An Umbraco backoffice dashboard that lets you search for media items by name, si
 
 ## Issues / Suggestions
 - To report an issue or suggest a feature please use the GitHub issue tracker - https://github.com/dwlkev/DigitalWonderlab.MediaFinder/issues
+
+## Screenshots
+![Dashboard](https://i.postimg.cc/W3PYjn83/medafinder.png)
