@@ -1,0 +1,73 @@
+<div class="media-finder-wrapper">
+    <div ng-controller="MediaFinderV13Controller as vm">
+        <uui-box class="search-box">
+            <h1>Media Finder</h1>
+            <p>Search for media items in your Umbraco instance by name, file size, or type.</p>
+
+            <div class="search-form">
+                <div class="search-type-group">
+                    <label class="radio-label">
+                        <input type="radio" name="searchType" value="name" checked /> Search by Name
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="searchType" value="size" /> Search by Size
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="searchType" value="type" /> Search by Type
+                    </label>
+                </div>
+
+                <div class="search-inputs">
+                    <div id="nameSearchInput" class="search-input-group">
+                        <input type="text" id="queryInput" placeholder="Enter file name..." />
+                    </div>
+                    <div id="sizeSearchInput" class="search-input-group" style="display:none;">
+                        <label>Min Size (MB): <input type="number" id="minSizeInput" min="0" step="0.1" placeholder="0" /></label>
+                        <label>Max Size (MB): <input type="number" id="maxSizeInput" min="0" step="0.1" placeholder="100" /></label>
+                    </div>
+                    <div id="typeSearchInput" class="search-input-group" style="display:none;">
+                        <input type="text" id="typeInput" placeholder="Enter file type (e.g. jpg, pdf, png)..." />
+                    </div>
+                </div>
+
+                <uui-button label="Search" id="searchBtn" look="primary"></uui-button>
+            </div>
+        </uui-box>
+
+        <div id="resultsSection" class="results-section" style="display:none;">
+            <h3>Results <span id="resultCount" class="result-count"></span></h3>
+            <div class="table-wrapper">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="name">File Name <span class="sort-arrow"></span></th>
+                            <th class="sortable" data-sort="type">Type <span class="sort-arrow"></span></th>
+                            <th class="sortable" data-sort="size">Size <span class="sort-arrow"></span></th>
+                            <th>Link</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                    </tbody>
+                </table>
+            </div>
+            <div id="paginationBar" class="pagination-bar">
+                <button id="prevPage" class="page-btn" disabled>&laquo; Prev</button>
+                <span id="pageInfo" class="page-info"></span>
+                <button id="nextPage" class="page-btn" disabled>Next &raquo;</button>
+            </div>
+        </div>
+
+        <div id="noResults" class="no-results" style="display:none;">
+            <p>No media items found matching your search.</p>
+        </div>
+
+        <div id="loadingIndicator" class="loading-section" style="display:none;">
+            <span class="loading-spinner"></span> Searching...
+        </div>
+
+        <div class="copy">
+            Created with &#x1F497; by
+            <a href="https://digitalwonderlab.com" target="_blank">Digital Wonderlab</a>
+        </div>
+    </div>
+</div>

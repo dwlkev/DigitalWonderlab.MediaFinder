@@ -1,0 +1,68 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<Nullable>enable</Nullable>
+		<!-- NuGet metadata -->
+		<IsPackable>true</IsPackable>
+		<PackageId>DigitalWonderlab.MediaFinder</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>Digital Wonderlab</Authors>
+		<Company>Digital Wonderlab</Company>
+		<Description>Media Finder dashboard for Umbraco 13 - 17. Search media by name, size, or type.</Description>
+		<PackageTags>umbraco;umbraco-cms;dashboard;umbraco-marketplace;media</PackageTags>
+		<RepositoryUrl>https://github.com/dwlkev/DigitalWonderlab.MediaFinder</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/dwlkev/DigitalWonderlab.MediaFinder</PackageProjectUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon>icon.png</PackageIcon>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+		<!-- Key for Umbraco App_Plugins packing -->
+		<ContentTargetFolders>content</ContentTargetFolders>
+		<IncludeBuildOutput>true</IncludeBuildOutput>
+
+	</PropertyGroup>
+
+	<!-- Dependencies (keep your existing) -->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+		<PackageReference Include="Umbraco.Cms.Core" Version="[13.0.0,15.0.0)" />
+		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[13.0.0,15.0.0)"  />
+		<PackageReference Include="Umbraco.Cms.Infrastructure" Version="[13.0.0,15.0.0)"  />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+		<PackageReference Include="Umbraco.Cms.Core" Version="[15.0.0,17.0.0)"  />
+		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[15.0.0,17.0.0)"  />
+		<PackageReference Include="Umbraco.Cms.Infrastructure" Version="[15.0.0,17.0.0)"  />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+		<PackageReference Include="Umbraco.Cms.Core" Version="[17.0.0,18.0.0)" />
+		<PackageReference Include="Umbraco.Cms.Web.Common" Version="[17.0.0,18.0.0)" />
+		<PackageReference Include="Umbraco.Cms.Infrastructure" Version="[17.0.0,18.0.0)" />
+	</ItemGroup>
+
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<!-- Pack App_Plugins as content -->
+	<ItemGroup>
+		<Content Include="App_Plugins\MediaFinder\**" ExcludeFromSingleFile="true">
+			<Pack>true</Pack>
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+
+		<!-- Pack .targets to buildTransitive (Umbraco standard for copy on build) -->
+		<None Include="buildTransitive\**" Pack="true" PackagePath="buildTransitive" />
+	</ItemGroup>
+
+	<!-- README + icon -->
+	<ItemGroup>
+		<None Include="README.md" Pack="true" PackagePath="\" />
+		<None Include="icon.png" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+</Project>

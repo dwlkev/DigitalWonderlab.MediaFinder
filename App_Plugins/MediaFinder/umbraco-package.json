@@ -1,0 +1,25 @@
+{
+  "$schema": "../../umbraco-package-schema.json",
+  "name": "MediaFinder",
+  "version": "1.0.0",
+  "extensions": [
+    {
+      "type": "dashboard",
+      "alias": "mediaFinderDashboard",
+      "name": "Media Finder Dashboard",
+      "js": "/App_Plugins/MediaFinder/media-finder.js",
+      "elementName": "media-finder-dashboard",
+      "weight": 10,
+      "meta": {
+        "label": "Media Finder",
+        "pathname": "media-finder"
+      },
+      "conditions": [
+        {
+          "alias": "Umb.Condition.SectionAlias",
+          "match": "Umb.Section.Settings"
+        }
+      ]
+    }
+  ]
+}

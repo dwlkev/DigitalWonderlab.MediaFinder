@@ -1,0 +1,26 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<PropertyGroup>
+		<MediaFinderContentFilesPath>$(MSBuildThisFileDirectory)..\content\App_Plugins\MediaFinder\**\*</MediaFinderContentFilesPath>
+	</PropertyGroup>
+
+	<Target Name="CopyMediaFinderAssets" BeforeTargets="Build">
+		<ItemGroup>
+			<MediaFinderContentFiles Include="$(MediaFinderContentFilesPath)" />
+		</ItemGroup>
+		<Message Text="Copying MediaFinder files: $(MediaFinderContentFilesPath) - #@(MediaFinderContentFiles->Count()) files" Importance="high" />
+		<Copy
+		  SourceFiles="@(MediaFinderContentFiles)"
+		  DestinationFiles="@(MediaFinderContentFiles->'$(MSBuildProjectDirectory)\App_Plugins\MediaFinder\%(RecursiveDir)%(Filename)%(Extension)')"
+		  SkipUnchangedFiles="true" />
+	</Target>
+
+	<Target Name="ClearMediaFinderAssets" BeforeTargets="Clean">
+		<ItemGroup>
+			<MediaFinderDir Include="$(MSBuildProjectDirectory)\App_Plugins\MediaFinder\" />
+		</ItemGroup>
+		<Message Text="Clear old MediaFinder data" Importance="high" />
+		<RemoveDir Directories="@(MediaFinderDir)" />
+	</Target>
+
+</Project>

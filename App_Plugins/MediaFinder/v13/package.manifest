@@ -1,0 +1,17 @@
+{
+  "dashboards": [
+    {
+      "alias": "DigitalWonderlab.MediaFinder",
+      "view": "/App_Plugins/MediaFinder/v13/dashboard.html",
+      "sections": [ "settings" ],
+      "weight": 10
+    }
+  ],
+  "javascript": [
+    "/App_Plugins/MediaFinder/v13/controller.js",
+    "/App_Plugins/MediaFinder/v13/app.js"
+  ],
+  "css": [
+    "/App_Plugins/MediaFinder/media-finder-style.css"
+  ]
+}
