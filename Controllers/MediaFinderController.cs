@@ -35,22 +35,7 @@ public class MediaFinderController : ControllerBase
         if (pageSize < 1) pageSize = 20;
         if (pageSize > 100) pageSize = 100;
 
-        // Safe ORDER BY mapping — no user input in SQL
         var dir = orderDir?.ToLowerInvariant() == "desc" ? "DESC" : "ASC";
-        string orderClause;
-        switch (orderBy?.ToLowerInvariant())
-        {
-            case "type":
-                orderClause = $"pdExt.varcharValue {dir}, n.text ASC";
-                break;
-            case "size":
-                orderClause = $"COALESCE(CAST(NULLIF(pdBytes.varcharValue, '') AS BIGINT), 0) {dir}, n.text ASC";
-                break;
-            default: // "name"
-                orderClause = $"n.text {dir}";
-                break;
-        }
-
         var offset = (page - 1) * pageSize;
 
         try
@@ -58,8 +43,26 @@ public class MediaFinderController : ControllerBase
             using var scope = _scopeProvider.CreateScope(autoComplete: true);
             var db = scope.Database;
 
-            // Detect database type for pagination syntax
+            // Detect database type for pagination syntax and safe casting
             var isSqlite = db.DatabaseType.GetType().Name.IndexOf("Sqlite", StringComparison.OrdinalIgnoreCase) >= 0;
+            // TRY_CAST on SQL Server returns NULL for non-numeric data instead of throwing;
+            // SQLite CAST is already lenient (returns 0 for non-numeric)
+            var castBigint = isSqlite ? "CAST" : "TRY_CAST";
+
+            // Safe ORDER BY mapping — no user input in SQL
+            string orderClause;
+            switch (orderBy?.ToLowerInvariant())
+            {
+                case "type":
+                    orderClause = $"pdExt.varcharValue {dir}, n.text ASC";
+                    break;
+                case "size":
+                    orderClause = $"COALESCE({castBigint}(NULLIF(pdBytes.varcharValue, '') AS BIGINT), 0) {dir}, n.text ASC";
+                    break;
+                default:
+                    orderClause = $"n.text {dir}";
+                    break;
+            }
 
             string orderAndPage;
             if (isSqlite)
@@ -74,7 +77,7 @@ public class MediaFinderController : ControllerBase
             FROM umbracoNode n
             INNER JOIN umbracoContent c ON n.id = c.nodeId
             INNER JOIN cmsContentType ct ON c.contentTypeId = ct.nodeId
-            INNER JOIN umbracoContentVersion cv ON n.id = cv.nodeId AND cv.current = 1
+            INNER JOIN umbracoContentVersion cv ON n.id = cv.nodeId AND cv.[current] = 1
             LEFT JOIN umbracoPropertyData pdExt ON cv.id = pdExt.versionId
                 AND pdExt.propertyTypeId IN (SELECT id FROM cmsPropertyType WHERE alias = 'umbracoExtension')
             LEFT JOIN umbracoPropertyData pdBytes ON cv.id = pdBytes.versionId
@@ -114,12 +117,12 @@ public class MediaFinderController : ControllerBase
 
                 if (minSize.HasValue)
                 {
-                    sizeFilter += $" AND CAST(pdBytes.varcharValue AS BIGINT) >= @{sizeParams.Count}";
+                    sizeFilter += $" AND {castBigint}(pdBytes.varcharValue AS BIGINT) >= @{sizeParams.Count}";
                     sizeParams.Add(minSize.Value);
                 }
                 if (maxSize.HasValue)
                 {
-                    sizeFilter += $" AND CAST(pdBytes.varcharValue AS BIGINT) <= @{sizeParams.Count}";
+                    sizeFilter += $" AND {castBigint}(pdBytes.varcharValue AS BIGINT) <= @{sizeParams.Count}";
                     sizeParams.Add(maxSize.Value);
                 }
 
@@ -158,19 +161,26 @@ public class MediaFinderController : ControllerBase
                 var nodeIdsStr = string.Join(",", nodeIds);
 
                 // Fetch file sizes
-                var sizeRows = db.Fetch<dynamic>(@"
-                    SELECT cv.nodeId AS Id,
-                           CAST(pd.varcharValue AS BIGINT) AS SizeBytes
-                    FROM umbracoContentVersion cv
-                    INNER JOIN umbracoPropertyData pd ON cv.id = pd.versionId
-                    INNER JOIN cmsPropertyType pt ON pd.propertyTypeId = pt.id
-                    WHERE cv.current = 1
-                      AND pt.alias = 'umbracoBytes'
-                      AND pd.varcharValue IS NOT NULL AND pd.varcharValue <> ''
-                      AND cv.nodeId IN (" + nodeIdsStr + ")");
+                try
+                {
+                    var sizeRows = db.Fetch<dynamic>(@"
+                        SELECT cv.nodeId AS Id,
+                               COALESCE(" + castBigint + @"(pd.varcharValue AS BIGINT), 0) AS SizeBytes
+                        FROM umbracoContentVersion cv
+                        INNER JOIN umbracoPropertyData pd ON cv.id = pd.versionId
+                        INNER JOIN cmsPropertyType pt ON pd.propertyTypeId = pt.id
+                        WHERE cv.[current] = 1
+                          AND pt.alias = 'umbracoBytes'
+                          AND pd.varcharValue IS NOT NULL AND pd.varcharValue <> ''
+                          AND cv.nodeId IN (" + nodeIdsStr + ")");
 
-                foreach (var sr in sizeRows)
-                    sizeMap[(int)sr.Id] = (long)sr.SizeBytes;
+                    foreach (var sr in sizeRows)
+                        sizeMap[(int)sr.Id] = (long)sr.SizeBytes;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to fetch sizes: {Message}", ex.Message);
+                }
 
                 // Fetch dimensions (width/height) - stored in intValue column
                 try
@@ -183,7 +193,7 @@ public class MediaFinderController : ControllerBase
                         INNER JOIN umbracoContentVersion cv ON n.id = cv.nodeId
                         INNER JOIN umbracoPropertyData pd ON cv.id = pd.versionId
                         INNER JOIN cmsPropertyType pt ON pd.propertyTypeId = pt.id
-                        WHERE cv.current = 1
+                        WHERE cv.[current] = 1
                           AND pt.alias IN ('umbracoWidth', 'umbracoHeight')
                           AND pd.intValue IS NOT NULL
                           AND n.id IN (" + nodeIdsStr + ")");
@@ -215,7 +225,7 @@ public class MediaFinderController : ControllerBase
                         FROM umbracoContentVersion cv
                         INNER JOIN umbracoPropertyData pd ON cv.id = pd.versionId
                         INNER JOIN cmsPropertyType pt ON pd.propertyTypeId = pt.id
-                        WHERE cv.current = 1
+                        WHERE cv.[current] = 1
                           AND pt.alias = 'umbracoFile'
                           AND cv.nodeId IN (" + nodeIdsStr + ")");
 

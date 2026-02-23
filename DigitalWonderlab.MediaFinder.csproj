@@ -6,7 +6,7 @@
 		<!-- NuGet metadata -->
 		<IsPackable>true</IsPackable>
 		<PackageId>DigitalWonderlab.MediaFinder</PackageId>
-		<Version>1.0.1</Version>
+		<Version>1.0.2</Version>
 		<Authors>Digital Wonderlab</Authors>
 		<Company>Digital Wonderlab</Company>
 		<Description>Media Finder dashboard for Umbraco 13 - 17. Search media by name, size, or type.</Description>
