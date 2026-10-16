@@ -24,7 +24,7 @@ list every media item (names, paths, file URLs, sizes) without signing in. **1.1
 also no longer embed the build machine's file path inside the DLLs.
 
 ## Telemetry
-Once a day Media Finder sends Digital Wonderlab a small anonymous report so we know how many sites use it and on which
+Once a day Media Finder sends us a small anonymous report so we know how many sites use it and on which
 versions. It is on by default and easy to turn off.
 
 - **Sent:** a random install ID (created on first run, stored in your Umbraco database, not derived from anything
