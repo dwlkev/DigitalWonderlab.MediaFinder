@@ -1,4 +1,8 @@
 <div class="media-finder-wrapper">
+    <uui-tab-group class="dwl-tabs">
+        <uui-tab label="Search" data-dwl-view="main" active>Search</uui-tab>
+        <uui-tab label="Settings" data-dwl-view="settings">Settings</uui-tab>
+    </uui-tab-group>
     <uui-box class="search-box">
         <h1>Media Finder</h1>
         <p>Search for media items in your Umbraco instance by name, file size, or type.</p>
@@ -70,6 +74,22 @@
     <div id="loadingIndicator" class="loading-section" style="display:none;">
         <span class="loading-spinner"></span> Searching...
     </div>
+
+    <uui-box class="dwl-settings" headline="Anonymous telemetry">
+        <p>
+            Once a day this site sends Digital Wonderlab a small anonymous report so we can see how many sites use
+            Media Finder and on which versions: a random install ID, the package, Umbraco and .NET versions, hosting
+            type, the media library's rough size in bands (for example "100-999 items") and how many searches were
+            run. No hostnames, URLs, file names, content, names or emails are sent. It can also be turned off in
+            config with <code>MediaFinder:Telemetry:Enabled = false</code>.
+        </p>
+        <uui-toggle id="dwl-telemetry-enabled" label="Send anonymous telemetry"></uui-toggle>
+        <div id="dwl-telemetry-status"></div>
+        <details id="dwl-telemetry-preview-box">
+            <summary>Show exactly what is sent</summary>
+            <pre id="dwl-telemetry-preview">Loading...</pre>
+        </details>
+    </uui-box>
 
     <div class="copy">Created with &#x1F497; by <a href="https://digitalwonderlab.com" target="_blank">Digital Wonderlab</a></div>
 </div>

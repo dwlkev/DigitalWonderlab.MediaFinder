@@ -1,12 +1,22 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using DigitalWonderlab.MediaFinder;
+using DigitalWonderlab.Telemetry;
+using Umbraco.Cms.Web.Common.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Cms.Infrastructure.Scoping;
 
+// SECURITY (1.1.0): up to 1.0.4 this controller had no authorisation, so anyone could list every media item
+// (names, paths, file URLs, sizes) without signing in. Now backoffice users only. Umbraco 13 only runs
+// backoffice cookie auth on /umbraco/backoffice/*, so the v13 dashboard uses the second route.
 [ApiController]
 [Route("umbraco/api/mediafinder")]
+[Route("umbraco/backoffice/mediafinder")]
+[Authorize(Policy = AuthorizationPolicies.BackOfficeAccess)]
 public class MediaFinderController : ControllerBase
 {
     private readonly IScopeProvider _scopeProvider;
@@ -30,6 +40,7 @@ public class MediaFinderController : ControllerBase
         [FromQuery] string orderDir = "asc")
     {
         var mediaGuid = new Guid("B796F64C-1F99-4FFB-B886-4BF4BC011A9C");
+        HttpContext.RequestServices.GetService<TelemetryCounters>()?.Increment(MediaFinderTelemetryContributor.Searches);
 
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 20;
@@ -287,5 +298,40 @@ public class MediaFinderController : ControllerBase
             _logger.LogError(ex, "MediaFinder search failed: {Message}", ex.Message);
             return StatusCode(500, new { error = "Search failed: " + ex.Message });
         }
+    }
+
+    public record TelemetryToggleRequest(bool Enabled);
+
+    [HttpGet("telemetry")]
+    public IActionResult GetTelemetry()
+    {
+        var builder = HttpContext.RequestServices.GetRequiredService<TelemetryPayloadBuilder>();
+        return Ok(new { enabled = builder.IsProductToggleOn(MediaFinderTelemetryContributor.Product) });
+    }
+
+    // No [Consumes]: on Umbraco 14 / .NET 8 it made the GET twin on the same route 404. [FromBody] already
+    // refuses anything that isn't JSON (415), which is what blocks a cross-site form post.
+    [HttpPost("telemetry")]
+    public IActionResult SaveTelemetry([FromBody] TelemetryToggleRequest request)
+    {
+        var builder = HttpContext.RequestServices.GetRequiredService<TelemetryPayloadBuilder>();
+        builder.SetProductToggle(MediaFinderTelemetryContributor.Product, request.Enabled);
+        return Ok(new { enabled = request.Enabled });
+    }
+
+    /// <summary>The exact heartbeat this site would send next, shown on the dashboard's Settings tab.</summary>
+    [HttpGet("telemetry/preview")]
+    public IActionResult PreviewTelemetry()
+    {
+        var builder = HttpContext.RequestServices.GetRequiredService<TelemetryPayloadBuilder>();
+        var contributor = HttpContext.RequestServices.GetServices<ITelemetryContributor>()
+            .First(c => c.ProductId == MediaFinderTelemetryContributor.Product);
+        return Ok(new
+        {
+            endpoint = builder.Endpoint,
+            enabled = builder.GloballyEnabled && contributor.IsEnabled(),
+            environmentAllowed = builder.EnvironmentAllowed,
+            payload = builder.Build(contributor)
+        });
     }
 }
