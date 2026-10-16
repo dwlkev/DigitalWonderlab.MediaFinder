@@ -210,14 +210,15 @@
     text-decoration: none !important;
     font-weight: 600 !important;
 }
-/* Search | Settings switch (1.1.0): uui-tab-group, styled by the backoffice. The wrapper's .dwl-show-settings
+/* Hide rules are !important: the dashboards show results via inline style.display, which would win otherwise.
+   Search | Settings switch (1.1.0): uui-tab-group, styled by the backoffice. The wrapper's .dwl-show-settings
    class hides the search UI and shows the settings box. */
 .dwl-tabs { margin: 0 0 12px; border-bottom: 1px solid var(--uui-color-border, #d8d7d9); }
 .dwl-settings { display: none; }
 .dwl-show-settings .dwl-settings { display: block; }
 .dwl-show-settings .media-finder-wrapper > :not(.dwl-tabs):not(.dwl-settings):not(.copy),
 .dwl-show-settings > :not(.dwl-tabs):not(.dwl-settings):not(.copy),
-.dwl-show-settings [ng-controller] > :not(.dwl-tabs):not(.dwl-settings):not(.copy) { display: none; }
+.dwl-show-settings [ng-controller] > :not(.dwl-tabs):not(.dwl-settings):not(.copy) { display: none !important; }
 .dwl-settings p { max-width: 720px; }
 .dwl-settings uui-toggle { display: block; margin: 12px 0 4px; }
 #dwl-telemetry-status { color: var(--uui-color-text-alt, #68676b); font-size: 13px; }
