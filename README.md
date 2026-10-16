@@ -18,11 +18,6 @@ An Umbraco backoffice dashboard that lets you search for media items by name, si
 - Install via NuGet https://www.nuget.org/packages/DigitalWonderlab.MediaFinder/latest
 - Go to Settings and click the Media Finder tab
 
-## Security (1.1.0) - please upgrade
-Earlier versions did not require a backoffice login for the Media Finder API, so anyone who knew the address could
-list every media item (names, paths, file URLs, sizes) without signing in. **1.1.0 requires a signed-in backoffice user for every request.** Release builds
-also no longer embed the build machine's file path inside the DLLs.
-
 ## Telemetry
 Once a day Media Finder sends us a small anonymous report so we know how many sites use it and on which
 versions. It is on by default and easy to turn off.
